@@ -35,13 +35,13 @@ function extract_gtex_info_from_id(variant_id)
     return replace(chr, "chr" => ""), parse(Int, pos), a1, a0
 end
 
-function finemap_gtex_file(;
-    gwas_locus_results_dir = "/home/olabayle/isaric/olivier/Covid19/data/gwas_finemapping_results/GWAS_chr1_64964808",
-    chrom = "chr1",
-    lead_pos = 155072528,
-    N = 940,
-    tissue = "Adipose_Subcutaneous",
-    gtex_file = "/gpfs/igmmfs01/eddie/ISARIC4C/GTEx_Analysis_v10_QTLs/GTEx_Analysis_v10_eQTL_all_associations/Adipose_Subcutaneous.v10.allpairs.chr1.parquet"
+function finemap_gtex_file(
+    gtex_file,
+    gwas_locus_results_dir,
+    chrom,
+    lead_pos,
+    tissue,
+    N
     )
     
     # Find relevant files
