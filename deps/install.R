@@ -1,0 +1,5 @@
+install.packages("RcppParallel")
+install.packages("Rfast")
+install.packages("data.table")
+install.packages("susieR")
+install.packages("coloc")
