@@ -1,11 +1,6 @@
 
-function write_results_with_merge_ids(results_file, kgp_freqs, output_dir)
-    updated_results_file = joinpath(output_dir, "results_aligned.tsv")
-    if isfile(updated_results_file)
-        @info("Results file with merge ids already exists. Skipping creation.")
-        joined_results = CSV.read(updated_results_file, DataFrame; delim='\t', missingstring="NA")
-        return joined_results, updated_results_file
-    end
+function write_results_with_merge_ids(results_file, kgp_freqs)
+    updated_results_file = "results_and_ref.tsv"
     results = CSV.read(results_file, DataFrame; delim='\t', missingstring="NA")
     select!(results,
         :ID => :GWAS_ID,
@@ -34,7 +29,7 @@ function get_significant_clumps(bed_prefix, gwas_results_file, output_dir;
     clump_pval_field = "LOG10P",
     allele_1_field = "ALLELE_1"
     )
-    output_clump_prefix = joinpath(output_dir, "clumps")
+    output_clump_prefix = "GWAS"
     run(`plink2 --bfile $bed_prefix \
         --clump $gwas_results_file \
         --clump-p1 $lead_pvalue \
@@ -62,12 +57,7 @@ end
 function prepare_gwas_results(;
     results_file="/home/olabayle/isaric/olivier/Covid19/data/covid_19_results_2026/meta_analysis_workdir/META_ANALYSIS.all.tsv",
     kgp_prefix="/gpfs/igmmfs01/eddie/ISARIC4C/olivier/data/kgp-merged-unrelated-or3/kgp.merged.unrelated",
-    output_dir="/home/olabayle/isaric/olivier/Covid19/data/gwas_finemapping_results",
-    locus_kb = 500,
-    var_y=0.33
     )
-    isdir(output_dir) || mkdir(output_dir)
-
     # Load KGP frequencies and create merge ids
     @info "Loading Reference frequencies"
     kgp_freqs = CSV.read("$kgp_prefix.afreq", DataFrame; delim='\t', missingstring="NA")
@@ -79,11 +69,11 @@ function prepare_gwas_results(;
         "ALT_FREQS" => :KGP_ALT_FREQ
     )
     @info "Merging With Reference"
-    joined_results, updated_results_file = write_results_with_merge_ids(results_file, kgp_freqs, output_dir)
+    _, updated_results_file = write_results_with_merge_ids(results_file, kgp_freqs, output_dir)
 
     # Get significant clumps
     @info "Finding clumps"
-    sigclumps = get_significant_clumps(kgp_prefix, updated_results_file, output_dir;
+    get_significant_clumps(kgp_prefix, updated_results_file, output_dir;
         min_sig_clump_size = 7,
         lead_pvalue = 5e-8,
         p2_pvalue = 5e-5,
