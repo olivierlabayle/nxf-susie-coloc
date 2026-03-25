@@ -19,6 +19,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+RUN wget https://s3.amazonaws.com/plink2-assets/plink2_linux_avx2_20260311.zip \
+    && unzip plink2_linux_avx2_20260311.zip \
+    && unzip plink2_linux_avx2_20260311.zip \
+    && mv plink2 /usr/local/bin \
+    && mv vcf_subset /usr/local/bin \
+    && rm plink2_linux_avx2_20260311.zip
+
 COPY . /opt/FinemapColoc
 
 WORKDIR /opt/FinemapColoc
