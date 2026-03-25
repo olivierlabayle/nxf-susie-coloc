@@ -19,3 +19,18 @@ function load_ld_matrix(ld_matrix_file, variants_file)
         header=readlines(variants_file)
     )
 end
+
+function compute_LD_matrix(bed_prefix, gwas_variants, locus_output_prefix)
+    variants_file = string(locus_output_prefix, ".variants.txt")
+    open(variants_file, "w" ) do io
+        for var in gwas_variants
+            println(io, var)
+        end
+    end
+    run(`plink2 \
+        --bfile $bed_prefix \
+        --r-unphased square ref-based \
+        --extract $(variants_file) \
+        --out $locus_output_prefix`
+    )
+end

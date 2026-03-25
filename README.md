@@ -8,8 +8,7 @@ Performs Finemapping and colocalization of GWAS results using the the provided L
 Example command with mount point:
 
 ```bash
-singularity shell \
-    --force \
+SINGULARITY_DISABLE_CACHE=1 singularity shell \
     -B /gpfs/igmmfs01/eddie/ISARIC4C/GTEx_Analysis_v10_QTLs/:/mnt/gtex \
     -B /home/olabayle/isaric/olivier/Covid19/data:/mnt/gwas_data \
     -B $PWD:/FinemapColoc \

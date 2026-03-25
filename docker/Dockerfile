@@ -41,5 +41,5 @@ ENV PATH="/opt/julia-1.11.9/bin/:${PATH}"
 ENV JULIA_DEPOT_PATH=/opt/julia_depot
 
 RUN R_HOME=/usr/local/lib/R \
-    && julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate() Pkg.precompile()' \
+    && julia --project=/opt/FinemapColoc --startup-file=no -e 'using Pkg; Pkg.instantiate(); Pkg.precompile()' \
     && julia --project=/opt/FinemapColoc --startup-file=no --threads=auto -e 'using PackageCompiler; create_sysimage(["FinemapColoc"], sysimage_path="/opt/FinemapColoc/sysimage.so", include_transitive_dependencies=false, cpu_target=PackageCompiler.default_app_cpu_target())'
