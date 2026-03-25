@@ -19,7 +19,7 @@ function write_results_with_merge_ids(results_file, kgp_freqs)
     return joined_results, updated_results_file
 end
 
-function get_significant_clumps(bed_prefix, gwas_results_file, output_dir;
+function get_significant_clumps(bed_prefix, gwas_results_file;
     min_sig_clump_size = 7,
     lead_pvalue = 5e-8,
     p2_pvalue = 5e-5,
@@ -54,9 +54,9 @@ function get_significant_clumps(bed_prefix, gwas_results_file, output_dir;
 end
 
 
-function prepare_gwas_results(;
-    results_file="/home/olabayle/isaric/olivier/Covid19/data/covid_19_results_2026/meta_analysis_workdir/META_ANALYSIS.all.tsv",
-    kgp_prefix="/gpfs/igmmfs01/eddie/ISARIC4C/olivier/data/kgp-merged-unrelated-or3/kgp.merged.unrelated",
+function prepare_gwas_results(
+    results_file,
+    kgp_prefix
     )
     # Load KGP frequencies and create merge ids
     @info "Loading Reference frequencies"
@@ -69,11 +69,11 @@ function prepare_gwas_results(;
         "ALT_FREQS" => :KGP_ALT_FREQ
     )
     @info "Merging With Reference"
-    _, updated_results_file = write_results_with_merge_ids(results_file, kgp_freqs, output_dir)
+    _, updated_results_file = write_results_with_merge_ids(results_file, kgp_freqs)
 
     # Get significant clumps
     @info "Finding clumps"
-    get_significant_clumps(kgp_prefix, updated_results_file, output_dir;
+    get_significant_clumps(kgp_prefix, updated_results_file;
         min_sig_clump_size = 7,
         lead_pvalue = 5e-8,
         p2_pvalue = 5e-5,

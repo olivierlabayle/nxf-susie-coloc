@@ -10,8 +10,16 @@ Example command with mount point:
 ```bash
 SINGULARITY_DISABLE_CACHE=1 singularity shell \
     -B /gpfs/igmmfs01/eddie/ISARIC4C/GTEx_Analysis_v10_QTLs/:/mnt/gtex \
-    -B /home/olabayle/isaric/olivier/Covid19/data:/mnt/gwas_data \
-    -B $PWD:/FinemapColoc \
+    -B /home/olabayle/isaric/olivier/data:/mnt/gwas_data \
+    -B $PWD/src:/opt/FinemapColoc/src \
     --no-home \
     docker://olivierlabayle/nxf-susie-coloc:main
+```
+
+Example of command run:
+
+```bash
+JULIA_DEPOT_PATH=/tmp:\$JULIA_DEPOT_PATH julia --project=/opt/FinemapColoc \
+    /opt/FinemapColoc/bin/run.jl prepare-gwas-results \
+    /mnt/gwas_data/Covid19/covid_19_results_2026/meta_analysis_workdir/META_ANALYSIS.all.tsv /mnt/gwas_data/kgp-merged-unrelated-or3/kgp.merged.unrelated
 ```

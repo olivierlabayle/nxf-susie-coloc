@@ -2,6 +2,15 @@ def get_prefix(file){
     return file.toString().take(file.toString().lastIndexOf('.'))
 }
 
+def get_julia_cmd(cpus){
+    if (params.USE_SYSIMAGE == false) {
+        return "TEMPD=\$(mktemp -d) && JULIA_DEPOT_PATH=\$TEMPD:\$JULIA_DEPOT_PATH julia --project=/opt/FinemapColoc --startup-file=no --threads=${cpus} /opt/FinemapColoc/bin/run.jl"
+    }
+    else {
+        return "TEMPD=\$(mktemp -d) && JULIA_DEPOT_PATH=\$TEMPD:\$JULIA_DEPOT_PATH julia --project=/opt/FinemapColoc --startup-file=no --threads=${cpus} --sysimage=/opt/FinemapColoc/sysimage.so /opt/FinemapColoc/bin/run.jl"
+    }        
+}
+
 process PrepareGWASResults {
     input:
         path gwas_results
@@ -13,10 +22,8 @@ process PrepareGWASResults {
 
     script:
         def ref_prefix = get_prefix(ref_files[1])
-        println(ref_prefix)
         """
-        JULIA_DEPOT_PATH=/tmp:\$JULIA_DEPOT_PATH julia --project=/opt/FinemapColoc --sysimage=/opt/FinemapColoc/sysimage.so \
-            /opt/FinemapColoc/bin/run.jl prepare-gwas-results \
+        ${get_julia_cmd(task.cpus)} prepare-gwas-results \
             ${gwas_results} ${ref_prefix}
         """
 

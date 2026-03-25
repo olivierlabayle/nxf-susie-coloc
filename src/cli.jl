@@ -3,13 +3,27 @@ function cli_settings()
         description="Susie-Coloc CLI",
         add_version = true,
         commands_are_required = false,
-        version=string(pkgversion(PopGen))
+        version=string(pkgversion(FinemapColoc))
     )
 
     @add_arg_table! s begin
+        "prepare-gwas-results"
+            action = :command
+            help = "Prepare GWAS results."
+
         "finemap-gtex"
             action = :command
-            help = "Runs meta-analysis across GWAS results."
+            help = "Finemap GTEX results."
+    end
+
+    @add_arg_table! s["prepare-gwas-results"] begin
+        "results-file"
+            arg_type = String
+            help = "Path to GWAS summary statistics"
+
+        "ref-prefix"
+            arg_type = String
+            help = "Prefix to reference dataset"
 
     end
 
@@ -37,7 +51,6 @@ function cli_settings()
         "N"
             arg_type = Int
             help     = "Number of samples used by the GTEX analysis"
-
     end
 
     return s
@@ -56,6 +69,11 @@ function julia_main()::Cint
             cmd_settings["lead-pos"],
             cmd_settings["tissue"],
             cmd_settings["N"]
+        )
+    elseif cmd == "prepare-gwas-results"
+        prepare_gwas_results(
+            cmd_settings["results-file"],
+            cmd_settings["ref-prefix"]
         )
     else
         throw(ArgumentError(string("Unknown command: ", cmd)))

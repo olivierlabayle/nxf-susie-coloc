@@ -9,6 +9,10 @@ using Parquet2
 
 include("cli.jl")
 include("utils.jl")
+include("prepare_gwas_results.jl")
+include("finemap_gwas.jl")
 include("finemap_gtex.jl")
+
+export julia_main
 
 end
