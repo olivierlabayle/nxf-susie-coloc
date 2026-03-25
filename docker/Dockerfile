@@ -25,10 +25,13 @@ WORKDIR /opt/FinemapColoc
 
 RUN Rscript deps/install.R
 
-RUN curl -fsSL https://install.julialang.org | sh -s -- --yes
+RUN wget https://julialang-s3.julialang.org/bin/linux/x64/1.11/julia-1.11.9-linux-x86_64.tar.gz \
+    && tar -xzf julia-1.11.9-linux-x86_64.tar.gz \
+    && rm julia-1.11.9-linux-x86_64.tar.gz \
+    && mv julia-1.11.9 /opt
 
-ENV PATH="/root/.juliaup/bin:${PATH}"
+ENV PATH="/opt/julia-1.11.9/bin/:${PATH}"
 
-RUN juliaup add 1.11 && juliaup default 1.11
+ENV JULIA_DEPOT_PATH=/opt/julia_depot
 
 RUN R_HOME=/usr/local/lib/R julia -e 'using Pkg; Pkg.activate("."); Pkg.instantiate()'
