@@ -19,7 +19,7 @@ function write_results_with_merge_ids(results_file, kgp_freqs)
     return joined_results, updated_results_file
 end
 
-function get_significant_clumps(bed_prefix, gwas_results_file;
+function write_significant_clumps(bed_prefix, gwas_results_file;
     min_sig_clump_size = 7,
     lead_pvalue = 5e-8,
     p2_pvalue = 5e-5,
@@ -46,11 +46,21 @@ function get_significant_clumps(bed_prefix, gwas_results_file;
     clumps = isfile(clumps_file) ? 
         CSV.read(clumps_file, DataFrame; delim="\t") : 
         DataFrame([col => [] for col in ["#CHROM", "POS", "ID", "NEG_LOG10_P", "TOTAL", "NONSIG", "S0.05", "S0.01", "S0.001", "S0.0001", "SP2"]])
+    
     sig_clumps = filter(
         :SP2 => x -> x !== "." && length(split(x, ",")) >= min_sig_clump_size, 
         clumps
     )
-    return sort!(sig_clumps, ["#CHROM", "POS"])
+    sort!(sig_clumps, ["#CHROM", "POS"])
+
+    CSV.write(
+        string(output_clump_prefix, ".sigclumps.tsv"), 
+        select(sig_clumps, "#CHROM" => "CHROM", "POS", "ID");
+        delim="\t",
+        missinstring="NA"
+    )
+
+    return 0
 end
 
 
@@ -73,7 +83,7 @@ function prepare_gwas_results(
 
     # Get significant clumps
     @info "Finding clumps"
-    get_significant_clumps(kgp_prefix, updated_results_file;
+    write_significant_clumps(kgp_prefix, updated_results_file;
         min_sig_clump_size = 7,
         lead_pvalue = 5e-8,
         p2_pvalue = 5e-5,
