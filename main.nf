@@ -12,13 +12,17 @@ def get_julia_cmd(cpus){
 }
 
 process PrepareGWASResults {
+    label 'multithreaded'
+    label 'mediummem'
+    publishDir 'results/prepare_gwas_results'
+
     input:
         path gwas_results
         path ref_files
 
     output:
-        path "results_and_ref.tsv"
-        path "GWAS.clumps"
+        path "results_and_ref.tsv", emit: gwas_results
+        path "GWAS.clumps", emit: clumps
 
     script:
         def ref_prefix = get_prefix(ref_files[1])
@@ -26,20 +30,46 @@ process PrepareGWASResults {
         ${get_julia_cmd(task.cpus)} prepare-gwas-results \
             ${gwas_results} ${ref_prefix}
         """
-
 }
 
-params.GTEX_FILES = "/gpfs/igmmfs01/eddie/ISARIC4C/GTEx_Analysis_v10_QTLs/GTEx_Analysis_v10_eQTL_all_associations/*.parquet"
-params.GWAS_FINMAPPING_DIRS = "/home/olabayle/isaric/olivier/Covid19/data/gwas_finemapping_results/GWAS_*"
-params.GTEX_TISSUES = ["Lung"]
-params.GWAS_RESULTS = "/home/olabayle/isaric/olivier/Covid19/data/covid_19_results_2026/meta_analysis_workdir/META_ANALYSIS.all.tsv"
-params.REFERENCE_PREFIX = "/gpfs/igmmfs01/eddie/ISARIC4C/olivier/data/kgp-merged-unrelated-or3/kgp.merged.unrelated"
+process FinemapGWASLocus {
+    label 'multithreaded'
+    label 'mediummem'
+    publishDir 'results/gwas_fp_results'
+
+    input:
+        tuple val(chrom), val(pos)
+        path(ref_files)
+        path(gwas_results)
+
+    output:
+        tuple val(chrom), val(pos), path("gwas_fp_results_chr${chrom}_${pos}", type: 'dir')
+
+    script:
+    def ref_prefix = get_prefix(ref_files[1])
+    """
+    ${get_julia_cmd(task.cpus)} finemap-gwas-locus \
+        ${chrom} \
+        ${pos} \
+        ${ref_prefix} \
+        ${gwas_results} \
+        --locus-kb=${params.LOCUS_KB} \
+        --outcome-type=${params.GWAS_OUTCOME_TYPE} \
+        --var-y=${params.GWAS_OUTCOME_VAR}
+    """
+}
 
 workflow {
     gwas_results = Channel.value(file(params.GWAS_RESULTS))
     reference_files = Channel.fromPath("${params.REFERENCE_PREFIX}*").collect()
 
-    PrepareGWASResults(gwas_results, reference_files)
+    prepared_results = PrepareGWASResults(gwas_results, reference_files)
+
+    clumps_ch = prepared_results.clumps
+        .splitCsv(sep: "\t", skip: 1, header: ["CHROM", "POS", "ID", "NEG_LOG10_P", "TOTAL", "NONSIG", "S0.05",	"S0.01", "S0.001", "S0.0001", "SP2"])
+        .map { it -> [it.CHROM, it.POS]}
+
+    gwas_fp_ch = FinemapGWASLocus(clumps_ch, reference_files, prepared_results.gwas_results)
 
     // gtex_chr_files_ch = Channel.fromPath(params.GTEX_FILES)
     //     .map { it -> [it.getName().split('\\.'), it] }

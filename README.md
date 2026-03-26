@@ -1,6 +1,16 @@
 # nxf-susie-coloc
 Performs Finemapping and colocalization of GWAS results using the the provided LD reference dataset
 
+## TODO
+
+- [ ] Make locus_kb a Nextflow argument
+
+## Running the Pipeline
+
+```bash
+nextflow run main.nf -profile eddiedev -resume -c run.config
+```
+
 ## Development
 
 **Singularity**

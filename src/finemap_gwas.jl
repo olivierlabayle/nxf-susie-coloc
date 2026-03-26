@@ -1,16 +1,12 @@
-function finemap_gwas_locus(clump, kgp_prefix, results, output_dir; locus_kb = 500, var_y=0.33)
-    locus_dir = joinpath(output_dir, string("GWAS_chr", clump["#CHROM"], "_", clump["POS"]))
-    isdir(locus_dir) || mkdir(locus_dir)
-    locus_output_prefix = joinpath(locus_dir, string("GWAS.chr", clump["#CHROM"], ".", clump["POS"]))
-    if isfile(string(locus_output_prefix, ".susie_results.rds"))
-        @info(string("Fine-mapping results for locus ", locus_output_prefix, " already exist. Skipping fine-mapping."))
-        return
-    end
+function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results; locus_kb = 500, outcome_type="cc", var_y=0.33)
+    output_dir = string("gwas_fp_results_chr", chrom, "_", lead_pos)
+    isdir(output_dir) || mkdir(output_dir)
+    locus_output_prefix = joinpath(output_dir, string("GWAS.chr", chrom, ".", lead_pos))
     @info(string("Fine-mapping locus ", locus_output_prefix))
     # Get locus results
     locus_results = subset(results,
-        :CHROM => x -> string.(x) .== string(clump["#CHROM"]),
-        :POS => x -> x .>= clump["POS"] - locus_kb * 1000 .&& x .<= clump["POS"] + locus_kb * 1000,
+        :CHROM => x -> string.(x) .== string(chrom),
+        :POS => x -> x .>= lead_pos - locus_kb * 1000 .&& x .<= lead_pos + locus_kb * 1000,
         :KGP_ALT_FREQ => x -> x .!= 0 .&& x .!= 1
     )
     # Harmonize the effect alleles and betas with the KGP reference
@@ -32,7 +28,7 @@ function finemap_gwas_locus(clump, kgp_prefix, results, output_dir; locus_kb = 5
 
     N = Int(median(locus_results.N))
 
-    run(`Rscript src/susie_finemap.R $locus_output_prefix $N $var_y`)
+    run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix $outcome_type $N $var_y`)
 
-    return locus_results
+    return 0
 end
