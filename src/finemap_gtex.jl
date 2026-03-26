@@ -12,7 +12,7 @@ function finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=940)
     CSV.write(
         string(locus_output_prefix, ".locus_results.tsv"), 
         gene_qtl_df; 
-        delim='\t', 
+        delim='\t',
         missingstring="NA"
     )
     # Compute LD matrix for locus variants an check alignement

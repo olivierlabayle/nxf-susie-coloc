@@ -96,7 +96,7 @@ end
 function julia_main()::Cint
     settings = parse_args(ARGS, cli_settings())
     cmd = settings["%COMMAND%"]
-    @info "Running WDL-GWAS CLI: $cmd"
+    @info "Running SuSiE-Coloc CLI: $cmd"
     cmd_settings = settings[cmd]
     if cmd == "finemap-gtex"
         finemap_gtex_file(

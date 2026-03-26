@@ -23,6 +23,7 @@ process PrepareGWASResults {
     output:
         path "results_and_ref.tsv", emit: gwas_results
         path "GWAS.clumps", emit: clumps
+        path "GWAS.sigclumps.tsv", emit: sig_clumps
 
     script:
         def ref_prefix = get_prefix(ref_files[1])
@@ -59,29 +60,51 @@ process FinemapGWASLocus {
     """
 }
 
+process FinemapGTEXTFile {
+    label 'multithreaded'
+    label 'mediummem'
+    publishDir 'results/gtex_fp_results'
+
+    input:
+        tuple val(chrom), val(pos), path(gwas_fp_dir), val(tissue), path(gtex_file)
+
+    output:
+        tuple val(chrom), val(pos), path("gwas_fp_results_chr${chrom}_${pos}", type: 'dir')
+
+    script:
+    def ref_prefix = get_prefix(ref_files[1])
+    """
+    ${get_julia_cmd(task.cpus)} finemap-gtex \
+        ${gtex_file} \
+        ${gwas_fp_dir} \
+        ${chrom} \
+        ${pos} \
+        ${tissue} \
+        ${params.GTEX_SAMPLE_SIZE}
+    """
+}
+
 workflow {
     gwas_results = Channel.value(file(params.GWAS_RESULTS))
     reference_files = Channel.fromPath("${params.REFERENCE_PREFIX}*").collect()
 
+    // Prepare GAWS results by Merging with the reference datasets and identifying significant loci
     prepared_results = PrepareGWASResults(gwas_results, reference_files)
 
-    clumps_ch = prepared_results.clumps
-        .splitCsv(sep: "\t", skip: 1, header: ["CHROM", "POS", "ID", "NEG_LOG10_P", "TOTAL", "NONSIG", "S0.05",	"S0.01", "S0.001", "S0.0001", "SP2"])
+    // Finemap significant GWAS loci
+    sig_clumps_ch = prepared_results.sig_clumps
+        .splitCsv(sep: "\t", skip: 1, header: ["CHROM", "POS", "ID"])
         .map { it -> [it.CHROM, it.POS]}
+    gwas_fp_ch = FinemapGWASLocus(sig_clumps_ch, reference_files, prepared_results.gwas_results)
 
-    gwas_fp_ch = FinemapGWASLocus(clumps_ch, reference_files, prepared_results.gwas_results)
+    // Read GTEX files
+    gtex_chr_files_ch = Channel.fromPath(params.GTEX_FILES)
+        .map { it -> [it.getName().split('\\.'), it] }
+        .map { it -> [it[0][-2], it[0][0], it[1]] }
+    if (params.GTEX_TISSUES.size() > 0) {
+        gtex_chr_files_ch = gtex_chr_files_ch.filter { it -> it[1] in params.GTEX_TISSUES }
+    }
 
-    // gtex_chr_files_ch = Channel.fromPath(params.GTEX_FILES)
-    //     .map { it -> [it.getName().split('\\.'), it] }
-    //     .map { it -> [it[0][-2], it[0][0], it[1]] }
-
-    // if (params.GTEX_TISSUES.size() > 0) {
-    //     gtex_chr_files_ch = gtex_chr_files_ch.filter { it -> it[1] in params.GTEX_TISSUES }
-    // }
-
-    // gwas_chr_lead_pos_ch = Channel.fromPath(params.GWAS_FINMAPPING_DIRS, type: 'dir')
-    //     .map { it -> [it.getName().split('_')[1..2], it] }
-
-
-    // gwas_chr_lead_pos_ch.combine(gtex_chr_files_ch, by: 0).view()
+    // Finemap GWAS matching loci GTEX results
+    gwas_fp_ch.combine(gtex_chr_files_ch, by: 0)
 }
