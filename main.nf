@@ -106,5 +106,5 @@ workflow {
     }
 
     // Finemap GWAS matching loci GTEX results
-    gwas_fp_ch.combine(gtex_chr_files_ch, by: 0)
+    FinemapGTEXTFile(gwas_fp_ch.combine(gtex_chr_files_ch, by: 0))
 }
