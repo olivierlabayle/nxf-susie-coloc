@@ -9,6 +9,7 @@ input_prefix <- args[1]
 type <- args[2]
 N <- as.numeric(args[3])
 var_y <- as.numeric(args[4])
+coverage <- as.numeric(args[5])
 
 sdY <- sqrt(var_y)
 gwas_file <- paste0(input_prefix, ".locus_results.tsv")
@@ -34,9 +35,8 @@ if (var_y > 0) {
         sdY = sdY,
         LD = ld_matrix
     )
-    results <- runsusie(coloc_data, var_y=var_y, n=N)
-}
-else {
+    results <- runsusie(coloc_data, maxit=10000, repeat_until_convergence=FALSE, var_y=var_y, n=N, coverage=coverage)
+} else {
     print("Running SuSiE with unknown outcome variance.")
     coloc_data <- list(
         beta = gwas_df$HARMONIZED_BETA,
@@ -48,7 +48,7 @@ else {
         type = type,
         LD = ld_matrix
     )
-    results <- runsusie(coloc_data, n=N)
+    results <- runsusie(coloc_data, maxit=10000, repeat_until_convergence=FALSE, n=N, coverage=coverage)
 }
 
 # Make diagnostic plot

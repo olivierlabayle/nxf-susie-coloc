@@ -31,3 +31,4 @@ JuliaLocalPreferences.toml
 .nextflow/
 work/
 results/
+temp/

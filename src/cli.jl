@@ -55,6 +55,11 @@ function cli_settings()
         "N"
             arg_type = Int
             help     = "Number of samples used by the GTEX analysis"
+        
+        "--coverage"
+            arg_type = Float64
+            help     = "SuSiE coverage parameter"
+            default  = 0.95
     end
 
     @add_arg_table! s["finemap-gwas-locus"] begin
@@ -88,6 +93,11 @@ function cli_settings()
             arg_type = Float64
             help     = "Variance of the outcome if known"
             default  = 0.0
+
+        "--coverage"
+            arg_type = Float64
+            help     = "SuSiE coverage parameter"
+            default  = 0.95
     end
 
     return s
@@ -105,7 +115,8 @@ function julia_main()::Cint
             cmd_settings["chrom"],
             cmd_settings["lead-pos"],
             cmd_settings["tissue"],
-            cmd_settings["N"]
+            cmd_settings["N"];
+            coverage=cmd_settings["coverage"]
         )
     elseif cmd == "prepare-gwas-results"
         prepare_gwas_results(
@@ -120,7 +131,8 @@ function julia_main()::Cint
             cmd_settings["gwas-results"];
             locus_kb = cmd_settings["locus-kb"],
             outcome_type = cmd_settings["outcome-type"],
-            var_y=cmd_settings["var-y"]
+            var_y=cmd_settings["var-y"],
+            coverage=cmd_settings["coverage"]
         )
     else
         throw(ArgumentError(string("Unknown command: ", cmd)))

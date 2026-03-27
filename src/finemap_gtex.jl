@@ -1,4 +1,4 @@
-function finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=940)
+function finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=940, coverage=0.95)
     isdir(gene_output_dir) || mkdir(gene_output_dir)
     locus_output_prefix = joinpath(gene_output_dir, gene_output_dir)
 
@@ -21,9 +21,22 @@ function finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=940)
 
     CSV.write(string(locus_output_prefix, ".unphased.vcor1"), ld_matrix_to_keep; delim='\t', header=false)
 
-    run(`Rscript src/susie_finemap.R $locus_output_prefix quant $N 0`)
+    # Run finemapping
+    try
+        run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix quant $N 0 $coverage`)
+        open(io -> println(io, "SuSiE suceeded."), joinpath(gene_output_dir, "status.txt"), "w")
+    catch
+        open(io -> println(io, "SuSiE failed."), joinpath(gene_output_dir, "status.txt"), "w")
+    end
 
-    return 0
+    return string(locus_output_prefix, ".susie_results.rds")
+end
+
+function coloc_gtex_gene(gwas_fp_results_file, gtex_fp_results_file, gene_output_dir)
+    if isfile(gtex_fp_results_file)
+        coloc_output_prefix = joinpath(gene_output_dir, string(gene_output_dir, ".coloc"))
+        run(`Rscript $(pkgdir(FinemapColoc))/src/run_coloc.R $gwas_fp_results_file $gtex_fp_results_file $coloc_output_prefix`)
+    end
 end
 
 """
@@ -35,18 +48,46 @@ function extract_gtex_info_from_id(variant_id)
     return replace(chr, "chr" => ""), parse(Int, pos), a1, a0
 end
 
+function aggregate_coloc_results(gene_output_dirs, chrom, lead_pos, tissue)
+    coloc_result_files = []
+    for gene_output_dir in gene_output_dirs
+        coloc_summary_file = joinpath(gene_output_dir, string(gene_output_dir, ".coloc.tsv"))
+        if isfile(coloc_summary_file)
+            push!(coloc_result_files, coloc_summary_file)
+        end
+    end
+    if !isempty(coloc_result_files)
+        aggregated_results = mapreduce(vcat, coloc_result_files) do coloc_result_file
+            gene = split(dirname(coloc_result_file), "_")[end]
+            coloc_results = CSV.read(coloc_result_file, DataFrame, missingstring="NA", delim="\t")
+            coloc_results.tissue .= tissue
+            coloc_results.chrom .= chrom
+            coloc_results.lead_pos .= lead_pos
+            coloc_results.gene .= gene
+            coloc_results
+        end
+        CSV.write(string("GTEX.coloc.", tissue, ".", chrom, ".", lead_pos, ".tsv"), 
+            aggregated_results, 
+            delim="\t", 
+            missingstring="NA"
+        )
+    end
+end
+
 function finemap_gtex_file(
     gtex_file,
     gwas_locus_results_dir,
     chrom,
     lead_pos,
     tissue,
-    N
+    N;
+    coverage=0.95
     )
     
     # Find relevant files
     gwas_dir_files = readdir(gwas_locus_results_dir, join=true)
     gwas_locus_results_file = gwas_dir_files[findfirst(endswith(".locus_results.tsv"), gwas_dir_files)]
+    gwas_fp_results_file = gwas_dir_files[findfirst(endswith(".susie_results.rds"), gwas_dir_files)]
     ld_matrix_file = gwas_dir_files[findfirst(endswith(".unphased.vcor1"), gwas_dir_files)]
     variants_file = gwas_dir_files[findfirst(endswith(".unphased.vcor1.vars"), gwas_dir_files)]
 
@@ -76,11 +117,16 @@ function finemap_gtex_file(
     ld_matrix = load_ld_matrix(ld_matrix_file, variants_file)
 
     # Finemap each gene expression for the locus
+    gene_output_dirs = []
     for (gene_key, gene_qtl_df) in pairs(groupby(joined_results, :gene_id))
         @info string("Fine-mapping gene ", gene_key.gene_id)
         gene_output_dir = string("GTEX_", chrom, "_", lead_pos, "_", tissue, "_", gene_key.gene_id)
-        finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=N)
+        gtex_fp_results_file = finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=N, coverage=coverage)
+        coloc_gtex_gene(gwas_fp_results_file, gtex_fp_results_file, gene_output_dir)
+        push!(gene_output_dirs, gene_output_dir)
     end
+
+    aggregate_coloc_results(gene_output_dirs, chrom, lead_pos, tissue)
 
     return 0
 end

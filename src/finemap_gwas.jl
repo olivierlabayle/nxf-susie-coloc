@@ -1,15 +1,19 @@
-function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file; locus_kb = 500, outcome_type="cc", var_y=0.33)
+function load_locus_results(results_file, chrom, lead_pos, locus_kb)
+    results = CSV.read(results_file, DataFrame; delim="\t", missingstring="NA")
+    return subset(results,
+        :CHROM => x -> string.(x) .== string(chrom),
+        :POS => x -> x .>= lead_pos - locus_kb * 1000 .&& x .<= lead_pos + locus_kb * 1000,
+        :KGP_ALT_FREQ => x -> x .!= 0 .&& x .!= 1
+    )
+end
+
+function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file; locus_kb = 500, outcome_type="cc", var_y=0.33, coverage=0.95)
     output_dir = string("gwas_fp_results_chr", chrom, "_", lead_pos)
     isdir(output_dir) || mkdir(output_dir)
     locus_output_prefix = joinpath(output_dir, string("GWAS.chr", chrom, ".", lead_pos))
     @info(string("Fine-mapping locus ", locus_output_prefix))
     # Get locus results
-    results = CSV.read(results_file, DataFrame; delim="\t", missingstring="NA")
-    locus_results = subset(results,
-        :CHROM => x -> string.(x) .== string(chrom),
-        :POS => x -> x .>= lead_pos - locus_kb * 1000 .&& x .<= lead_pos + locus_kb * 1000,
-        :KGP_ALT_FREQ => x -> x .!= 0 .&& x .!= 1
-    )
+    locus_results = load_locus_results(results_file, chrom, lead_pos, locus_kb)
     # Harmonize the effect alleles and betas with the KGP reference
     transform!(locus_results, 
         [:BETA, :ALLELE_1, :ALLELE_0, :KGP_REF, :KGP_ALT] => ByRow(harmonize_beta) => :HARMONIZED_BETA,
@@ -28,8 +32,12 @@ function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file; locus_kb 
     readlines(string(locus_output_prefix, ".unphased.vcor1.vars")) == locus_results.KGP_ID || error("Variants in LD matrix do not match locus results.")
 
     N = Int(median(locus_results.N))
-
-    run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix $outcome_type $N $var_y`)
+    try
+        run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix $outcome_type $N $var_y $coverage`)
+        open(io -> println(io, "SuSiE suceeded."), joinpath(output_dir, "status.txt"), "w")
+    catch
+        open(io -> println(io, "SuSiE failed."), joinpath(output_dir, "status.txt"), "w")
+    end
 
     return 0
 end
