@@ -7,7 +7,14 @@ function load_locus_results(results_file, chrom, lead_pos, locus_kb)
     )
 end
 
-function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file; locus_kb = 500, outcome_type="cc", var_y=0.33, coverage=0.95)
+function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file; 
+    locus_kb = 
+    500, 
+    outcome_type="cc", 
+    var_y=0.33, 
+    coverage=0.95,
+    susie_maxit=1000
+    )
     output_dir = string("gwas_fp_results_chr", chrom, "_", lead_pos)
     isdir(output_dir) || mkdir(output_dir)
     locus_output_prefix = joinpath(output_dir, string("GWAS.chr", chrom, ".", lead_pos))
@@ -33,7 +40,7 @@ function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file; locus_kb 
 
     N = Int(median(locus_results.N))
     try
-        run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix $outcome_type $N $var_y $coverage`)
+        run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix $outcome_type $N $var_y $coverage $susie_maxit`)
         open(io -> println(io, "SuSiE suceeded."), joinpath(output_dir, "status.txt"), "w")
     catch
         open(io -> println(io, "SuSiE failed."), joinpath(output_dir, "status.txt"), "w")

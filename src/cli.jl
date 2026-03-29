@@ -126,7 +126,7 @@ function julia_main()::Cint
             cmd_settings["lead-pos"],
             cmd_settings["tissue"],
             cmd_settings["N"];
-            coverage=cmd_settings["coverage"]
+            coverage=cmd_settings["coverage"],
             susie_maxit=cmd_settings["susie-maxit"]
         )
     elseif cmd == "prepare-gwas-results"

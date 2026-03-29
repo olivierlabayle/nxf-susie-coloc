@@ -1,4 +1,4 @@
-function finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=940, coverage=0.95)
+function finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=940, coverage=0.95, susie_maxit=1000)
     isdir(gene_output_dir) || mkdir(gene_output_dir)
     locus_output_prefix = joinpath(gene_output_dir, gene_output_dir)
 
@@ -23,7 +23,7 @@ function finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=940, cove
 
     # Run finemapping
     try
-        run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix quant $N 0 $coverage`)
+        run(`Rscript $(pkgdir(FinemapColoc))/src/run_susie.R $locus_output_prefix quant $N 0 $coverage $susie_maxit`)
         open(io -> println(io, "SuSiE suceeded."), joinpath(gene_output_dir, "status.txt"), "w")
     catch
         open(io -> println(io, "SuSiE failed."), joinpath(gene_output_dir, "status.txt"), "w")
@@ -81,7 +81,8 @@ function finemap_gtex_file(
     lead_pos,
     tissue,
     N;
-    coverage=0.95
+    coverage=0.95,
+    susie_maxit=1000
     )
     
     # Find relevant files
@@ -121,7 +122,7 @@ function finemap_gtex_file(
     for (gene_key, gene_qtl_df) in pairs(groupby(joined_results, :gene_id))
         @info string("Fine-mapping gene ", gene_key.gene_id)
         gene_output_dir = string("GTEX_", chrom, "_", lead_pos, "_", tissue, "_", gene_key.gene_id)
-        gtex_fp_results_file = finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=N, coverage=coverage)
+        gtex_fp_results_file = finemap_gtex_locus(gene_qtl_df, ld_matrix, gene_output_dir; N=N, coverage=coverage, susie_maxit=susie_maxit)
         coloc_gtex_gene(gwas_fp_results_file, gtex_fp_results_file, gene_output_dir)
         push!(gene_output_dirs, gene_output_dir)
     end
