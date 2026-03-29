@@ -60,6 +60,11 @@ function cli_settings()
             arg_type = Float64
             help     = "SuSiE coverage parameter"
             default  = 0.95
+
+        "--susie-maxit"
+            arg_type = Int
+            help     = "Maximum SuSiE iterations."
+            default = 1000
     end
 
     @add_arg_table! s["finemap-gwas-locus"] begin
@@ -98,6 +103,11 @@ function cli_settings()
             arg_type = Float64
             help     = "SuSiE coverage parameter"
             default  = 0.95
+
+        "--susie-maxit"
+            arg_type = Int
+            help     = "Maximum SuSiE iterations."
+            default = 1000
     end
 
     return s
@@ -117,6 +127,7 @@ function julia_main()::Cint
             cmd_settings["tissue"],
             cmd_settings["N"];
             coverage=cmd_settings["coverage"]
+            susie_maxit=cmd_settings["susie-maxit"]
         )
     elseif cmd == "prepare-gwas-results"
         prepare_gwas_results(
@@ -132,7 +143,8 @@ function julia_main()::Cint
             locus_kb = cmd_settings["locus-kb"],
             outcome_type = cmd_settings["outcome-type"],
             var_y=cmd_settings["var-y"],
-            coverage=cmd_settings["coverage"]
+            coverage=cmd_settings["coverage"],
+            susie_maxit=cmd_settings["susie-maxit"]
         )
     else
         throw(ArgumentError(string("Unknown command: ", cmd)))

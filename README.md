@@ -22,6 +22,7 @@ SINGULARITY_DISABLE_CACHE=1 singularity shell \
     -B /gpfs/igmmfs01/eddie/ISARIC4C/GTEx_Analysis_v10_QTLs/:/mnt/gtex \
     -B /home/olabayle/isaric/olivier/data:/mnt/gwas_data \
     -B $PWD/src:/opt/FinemapColoc/src \
+    -B $PWD/results:/mnt/results \
     --no-home \
     docker://olivierlabayle/nxf-susie-coloc:main
 ```

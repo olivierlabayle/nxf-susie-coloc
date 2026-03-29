@@ -35,7 +35,7 @@ if (var_y > 0) {
         sdY = sdY,
         LD = ld_matrix
     )
-    results <- runsusie(coloc_data, maxit=10000, repeat_until_convergence=FALSE, var_y=var_y, n=N, coverage=coverage)
+    results <- runsusie(coloc_data, maxit=1000, repeat_until_convergence=FALSE, var_y=var_y, n=N, coverage=coverage)
 } else {
     print("Running SuSiE with unknown outcome variance.")
     coloc_data <- list(
@@ -48,7 +48,7 @@ if (var_y > 0) {
         type = type,
         LD = ld_matrix
     )
-    results <- runsusie(coloc_data, maxit=10000, repeat_until_convergence=FALSE, n=N, coverage=coverage)
+    results <- runsusie(coloc_data, maxit=1000, repeat_until_convergence=FALSE, n=N, coverage=coverage)
 }
 
 # Make diagnostic plot
