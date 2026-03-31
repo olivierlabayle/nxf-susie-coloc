@@ -74,7 +74,6 @@ process FinemapGTEXTFile {
         tuple val(chrom), val(pos), path("gwas_fp_results_chr${chrom}_${pos}", type: 'dir')
 
     script:
-    def ref_prefix = get_prefix(ref_files[1])
     """
     ${get_julia_cmd(task.cpus)} finemap-gtex \
         ${gtex_file} \
@@ -121,7 +120,7 @@ workflow {
     // Read GTEX files
     gtex_chr_files_ch = Channel.fromPath(params.GTEX_FILES)
         .map { it -> [it.getName().split('\\.'), it] }
-        .map { it -> [it[0][-2], it[0][0], it[1]] }
+        .map { it -> [it[0][-2].replaceFirst(/^chr/, ''), it[0][0], it[1]] }
     if (params.GTEX_TISSUES.size() > 0) {
         gtex_chr_files_ch = gtex_chr_files_ch.filter { it -> it[1] in params.GTEX_TISSUES }
     }
