@@ -32,3 +32,5 @@ JuliaLocalPreferences.toml
 work/
 results/
 temp/
+results_backup/
+trace*

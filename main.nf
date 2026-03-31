@@ -89,27 +89,43 @@ process FinemapGTEXTFile {
 }
 
 workflow {
-    gwas_results = Channel.value(file(params.GWAS_RESULTS))
-    reference_files = Channel.fromPath("${params.REFERENCE_PREFIX}*").collect()
+    // If GWAS finemapping directories are not provided
+    if (params.GWAS_FP_DIRS == "") {
+        gwas_results = Channel.value(file(params.GWAS_RESULTS))
+        reference_files = Channel.fromPath("${params.REFERENCE_PREFIX}*").collect()
 
-    // Prepare GAWS results by Merging with the reference datasets and identifying significant loci
-    prepared_results = PrepareGWASResults(gwas_results, reference_files)
+        // Prepare GAWS results by Merging with the reference datasets and identifying significant loci
+        prepared_results = PrepareGWASResults(gwas_results, reference_files)
 
-    // Finemap significant GWAS loci
-    sig_clumps_ch = prepared_results.sig_clumps
-        .splitCsv(sep: "\t", skip: 1, header: ["CHROM", "POS", "ID"])
-        .map { it -> [it.CHROM, it.POS]}
-    gwas_fp_ch = FinemapGWASLocus(sig_clumps_ch, reference_files, prepared_results.gwas_results)
+        // Finemap significant GWAS loci
+        sig_clumps_ch = prepared_results.sig_clumps
+            .splitCsv(sep: "\t", skip: 1, header: ["CHROM", "POS", "ID"])
+            .map { it -> [it.CHROM, it.POS]}
+        
+        gwas_fp_ch = FinemapGWASLocus(sig_clumps_ch, reference_files, prepared_results.gwas_results)
 
-    gwas_fp_ch.view()
-    // // Read GTEX files
-    // gtex_chr_files_ch = Channel.fromPath(params.GTEX_FILES)
-    //     .map { it -> [it.getName().split('\\.'), it] }
-    //     .map { it -> [it[0][-2], it[0][0], it[1]] }
-    // if (params.GTEX_TISSUES.size() > 0) {
-    //     gtex_chr_files_ch = gtex_chr_files_ch.filter { it -> it[1] in params.GTEX_TISSUES }
-    // }
+    }
+     // If GWAS finemapping directories are provided
+    else {
+        gwas_fp_ch = Channel.fromPath(params.GWAS_FP_DIRS, type:'dir')
+            .map { dir -> [dir.getName().split("_"), dir, file("${dir}/status.txt").getText().trim()]}
+            .map { it -> [it[0][3].replaceFirst(/^chr/, ''), it[0][4], it[1], it[2]] }
 
-    // // Finemap GWAS matching loci GTEX results
-    // FinemapGTEXTFile(gwas_fp_ch.combine(gtex_chr_files_ch, by: 0))
+    }
+
+    // Only keep Successfully finemapped loci
+    sucessful_gwas_fp_ch = gwas_fp_ch
+        .filter { it -> it[3] == "SuSiE suceeded."}
+        .map {it -> [it[0], it[1], it[2]]}
+    
+    // Read GTEX files
+    gtex_chr_files_ch = Channel.fromPath(params.GTEX_FILES)
+        .map { it -> [it.getName().split('\\.'), it] }
+        .map { it -> [it[0][-2], it[0][0], it[1]] }
+    if (params.GTEX_TISSUES.size() > 0) {
+        gtex_chr_files_ch = gtex_chr_files_ch.filter { it -> it[1] in params.GTEX_TISSUES }
+    }
+
+    // Finemap GWAS matching loci GTEX results
+    FinemapGTEXTFile(sucessful_gwas_fp_ch.combine(gtex_chr_files_ch, by: 0))
 }

@@ -8,8 +8,7 @@ function load_locus_results(results_file, chrom, lead_pos, locus_kb)
 end
 
 function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file; 
-    locus_kb = 
-    500, 
+    locus_kb = 500, 
     outcome_type="cc", 
     var_y=0.33, 
     coverage=0.95,
@@ -22,7 +21,7 @@ function finemap_gwas_locus(chrom, lead_pos, kgp_prefix, results_file;
     # Get locus results
     locus_results = load_locus_results(results_file, chrom, lead_pos, locus_kb)
     # Harmonize the effect alleles and betas with the KGP reference
-    transform!(locus_results, 
+    transform!(locus_results,
         [:BETA, :ALLELE_1, :ALLELE_0, :KGP_REF, :KGP_ALT] => ByRow(harmonize_beta) => :HARMONIZED_BETA,
         :KGP_ALT_FREQ => ByRow(x -> x >= 0.5 ? 1 .- x : x) => :MAF
     )
