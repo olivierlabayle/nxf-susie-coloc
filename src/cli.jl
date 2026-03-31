@@ -18,6 +18,10 @@ function cli_settings()
         "finemap-gwas-locus"
             action = :command
             help = "Finemap GWAS locus."
+
+        "aggregate-coloc-results"
+            action = :command
+            help = "Aggregate coloc results."
     end
 
     @add_arg_table! s["prepare-gwas-results"] begin
@@ -28,7 +32,6 @@ function cli_settings()
         "ref-prefix"
             arg_type = String
             help = "Prefix to reference dataset"
-
     end
 
     @add_arg_table! s["finemap-gtex"] begin
@@ -110,6 +113,17 @@ function cli_settings()
             default = 1000
     end
 
+    @add_arg_table! s["aggregate-coloc-results"] begin
+        "results-file-list"
+            arg_type = String
+            help = "Path to list of files to aggregate"
+
+        "--output"
+            arg_type = String
+            default = "aggregated_coloc_results.tsv"
+            help = "Output path"
+    end
+
     return s
 end
 
@@ -145,6 +159,11 @@ function julia_main()::Cint
             var_y=cmd_settings["var-y"],
             coverage=cmd_settings["coverage"],
             susie_maxit=cmd_settings["susie-maxit"]
+        )
+    elseif cmd == "aggregate-coloc-results"
+        aggregate_coloc_results(
+            cmd_settings["results-file-list"];
+            output=cmd_settings["output"]
         )
     else
         throw(ArgumentError(string("Unknown command: ", cmd)))

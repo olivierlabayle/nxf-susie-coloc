@@ -71,7 +71,8 @@ process FinemapGTEXTFile {
         tuple val(chrom), val(pos), path(gwas_fp_dir), val(tissue), path(gtex_file)
 
     output:
-        tuple val(chrom), val(pos), path("gwas_fp_results_chr${chrom}_${pos}", type: 'dir')
+        tuple val(chrom), val(pos), val(tissue), path("GTEX_*", type: 'dir'), emit: gene_results
+        tuple val(chrom), val(pos), val(tissue), path("GTEX.coloc.${tissue}.${chrom}.${pos}.tsv"), emit: coloc_summary, optional: true
 
     script:
     """
@@ -84,6 +85,29 @@ process FinemapGTEXTFile {
         ${params.GTEX_SAMPLE_SIZE} \
         --coverage=${params.SUSIE_COVERAGE} \
         --susie-maxit=${params.SUSIE_MAXIT}
+    """
+}
+
+process AggregateColocResults {
+    label 'multithreaded'
+    label 'mediummem'
+    publishDir 'results/coloc_results'
+
+    input:
+        path(coloc_results)
+
+    output:
+        path("aggregated_coloc_results.tsv")
+
+    script:
+    """
+    for f in ${coloc_results}; do
+        echo "\$f"
+    done > file_list.txt
+
+    ${get_julia_cmd(task.cpus)} aggregate-coloc-results \
+        file_list.txt \
+        --output aggregated_coloc_results.tsv
     """
 }
 
@@ -126,5 +150,8 @@ workflow {
     }
 
     // Finemap GWAS matching loci GTEX results
-    FinemapGTEXTFile(sucessful_gwas_fp_ch.combine(gtex_chr_files_ch, by: 0))
+    gtex_outputs = FinemapGTEXTFile(sucessful_gwas_fp_ch.combine(gtex_chr_files_ch, by: 0))
+
+    // Aggregate coloc results
+    AggregateColocResults(gtex_outputs.coloc_summary.map { it -> it[3] }.collect())
 }

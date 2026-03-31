@@ -12,6 +12,7 @@ include("utils.jl")
 include("prepare_gwas_results.jl")
 include("finemap_gwas.jl")
 include("finemap_gtex.jl")
+include("aggregate_coloc.jl")
 
 export julia_main
 
