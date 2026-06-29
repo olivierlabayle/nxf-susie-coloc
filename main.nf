@@ -70,7 +70,7 @@ process FinemapGWASLocus {
 process FinemapGTEXTFile {
     label 'multithreaded'
     label 'mediummem'
-    publishDir 'results/gtex_fp_results/${tissue}'
+    publishDir "results/gtex_fp_results/${tissue}"
 
     input:
         tuple val(chrom), val(pos), path(gwas_fp_dir), val(tissue), path(gtex_file)
