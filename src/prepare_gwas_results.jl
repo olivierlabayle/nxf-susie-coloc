@@ -71,7 +71,7 @@ function prepare_gwas_results(
     lead_pvalue = 5e-8,
     p2_pvalue = 5e-5,
     r2_threshold = 0.2,
-    clump_kb = 500,
+    clump_kb = 500
     )
     # Load KGP frequencies and create merge ids
     @info "Loading Reference frequencies"

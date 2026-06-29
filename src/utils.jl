@@ -8,7 +8,7 @@ function harmonize_beta(beta, a1, a0, kgp_ref, kgp_alt)
     end
 end
 
-make_merge_id(c, p, a1, a0) = string(replace(c, "chr" => ""), ":", p, ":", join(sort([a1, a0]), ":"))
+make_merge_id(c, p, a1, a0) = string(replace(string(c), "chr" => ""), ":", p, ":", join(sort([a1, a0]), ":"))
 
 string_id_to_merge_id(x) = make_merge_id(split(x, ":")...)
 
