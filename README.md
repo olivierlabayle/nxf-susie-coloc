@@ -38,7 +38,7 @@ Performs Finemapping and colocalization of GWAS results using the the provided L
 
 ## Running the Pipeline
 
-Update the Nextflow profile and `run.config` file as desired, then run.
+Update the Nextflow profile and `run.config` file as desired, then run. The following `eddiedev` is meant to run on the Eddie cluster and will mount the source code in the singularity image for development purposes (to be used with `USE_SYSIMAGE=false`).
 
 ```bash
 nextflow run main.nf -profile eddiedev -resume -c run.config
