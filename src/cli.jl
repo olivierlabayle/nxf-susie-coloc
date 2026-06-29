@@ -32,6 +32,31 @@ function cli_settings()
         "ref-prefix"
             arg_type = String
             help = "Prefix to reference dataset"
+
+        "--min-sig-clump-size"
+            arg_type = Int
+            help     = "Minimum number of SNPs in a clump to be considered significant"
+            default  = 7
+        
+        "--lead-pvalue"
+            arg_type = Float64
+            help     = "Lead p-value threshold"
+            default  = 5e-8
+
+        "--p2-pvalue"
+            arg_type = Float64
+            help     = "Secondary p-value threshold"
+            default  = 5e-5
+
+        "--r2-threshold"
+            arg_type = Float64
+            help     = "R2 threshold for clumping"
+            default  = 0.2
+        
+        "--clump-kb"
+            arg_type = Int
+            help     = "Clumping distance in kb"
+            default  = 500
     end
 
     @add_arg_table! s["finemap-gtex"] begin
@@ -146,7 +171,12 @@ function julia_main()::Cint
     elseif cmd == "prepare-gwas-results"
         prepare_gwas_results(
             cmd_settings["results-file"],
-            cmd_settings["ref-prefix"]
+            cmd_settings["ref-prefix"];
+            min_sig_clump_size = cmd_settings["min-sig-clump-size"],
+            lead_pvalue = cmd_settings["lead-pvalue"],
+            p2_pvalue = cmd_settings["p2-pvalue"],
+            r2_threshold = cmd_settings["r2-threshold"],
+            clump_kb = cmd_settings["clump-kb"]
         )
     elseif cmd == "finemap-gwas-locus"
         finemap_gwas_locus(

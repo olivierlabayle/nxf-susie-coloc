@@ -29,7 +29,12 @@ process PrepareGWASResults {
         def ref_prefix = get_prefix(ref_files[1])
         """
         ${get_julia_cmd(task.cpus)} prepare-gwas-results \
-            ${gwas_results} ${ref_prefix}
+            ${gwas_results} ${ref_prefix} \
+            --min-sig-clump-size=${params.GWAS_MIN_SIG_CLUMP_SIZE} \
+            --lead-pvalue=${params.GWAS_LEAD_PVALUE} \
+            --p2-pvalue=${params.GWAS_P2_PVALUE} \
+            --r2-threshold=${params.GWAS_R2_THRESHOLD} \
+            --clump-kb=${params.GWAS_CLUMP_KB}
         """
 }
 
@@ -65,7 +70,7 @@ process FinemapGWASLocus {
 process FinemapGTEXTFile {
     label 'multithreaded'
     label 'mediummem'
-    publishDir 'results/gtex_fp_results'
+    publishDir 'results/gtex_fp_results/${tissue}'
 
     input:
         tuple val(chrom), val(pos), path(gwas_fp_dir), val(tissue), path(gtex_file)
@@ -110,6 +115,16 @@ process AggregateColocResults {
         --output aggregated_coloc_results.tsv
     """
 }
+
+
+params.USE_SYSIMAGE = true
+params.LOCUS_KB = 250
+params.GTEX_SAMPLE_SIZE = 940
+params.GWAS_FP_DIRS = ""
+params.GTEX_TISSUES = []
+params.SUSIE_COVERAGE = 0.8
+params.SUSIE_MAXIT = 1000
+
 
 workflow {
     // If GWAS finemapping directories are not provided

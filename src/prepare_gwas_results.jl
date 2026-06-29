@@ -66,7 +66,12 @@ end
 
 function prepare_gwas_results(
     results_file,
-    kgp_prefix
+    kgp_prefix;
+    min_sig_clump_size = 7,
+    lead_pvalue = 5e-8,
+    p2_pvalue = 5e-5,
+    r2_threshold = 0.2,
+    clump_kb = 500,
     )
     # Load KGP frequencies and create merge ids
     @info "Loading Reference frequencies"
@@ -84,11 +89,11 @@ function prepare_gwas_results(
     # Get significant clumps
     @info "Finding clumps"
     write_significant_clumps(kgp_prefix, updated_results_file;
-        min_sig_clump_size = 7,
-        lead_pvalue = 5e-8,
-        p2_pvalue = 5e-5,
-        r2_threshold = 0.2,
-        clump_kb = 500,
+        min_sig_clump_size = min_sig_clump_size,
+        lead_pvalue = lead_pvalue,
+        p2_pvalue = p2_pvalue,
+        r2_threshold = r2_threshold,
+        clump_kb = clump_kb,
         clump_id_field = "KGP_ID",
         clump_pval_field = "LOG10P",
         allele_1_field = "ALLELE_1"
